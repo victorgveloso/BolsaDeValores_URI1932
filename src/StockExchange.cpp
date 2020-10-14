@@ -4,26 +4,57 @@
 
 #include "StockExchange.h"
 
-int calculate(int *start, const int *end, int fee) {
-    int *cursor = start + 1;
-    bool ascending = false;
-    int left = 0;
-    int right = 0;
-    while (cursor <= end) { //TODO: break recursively
-        if (*cursor <= *(cursor - 1)) {
-            if (ascending) {
-                left = calculate(start, cursor - 1, fee);
-                right = calculate(cursor, end, fee);
+int calculate(int *start, int *end, int fee) {
+    if (start >= end) {
+        return 0;
+    }
+    int *midleft = start + 1;
+    int *midright = end - 1;
+    bool left_ascending = false;
+    // Divide
+    while (midleft <= midright) {
+        if (*midleft <= *(midleft - 1)) {
+            if (left_ascending) {
                 break;
-
             }
         } else {
-            ascending = true;
+            left_ascending = true;
         }
-        ++cursor;
+        ++midleft;
     }
+    bool right_descending = false;
+    while (midleft <= midright) {
+        if (*midright >= *(midright + 1)) {
+            if (right_descending) {
+                break;
+            }
+        } else {
+            right_descending = true;
+        }
+        --midright;
+    }
+    // Conquer
     int delta = (*end) - (*start);
-    return std::max({delta - fee, left + right, 0});
+    int left, right, first_case = delta - fee;
+    if (start > midright || end < midleft) { // must be OR for sorted inputs
+        return std::max(first_case, 0);
+    }
+    else {
+        left = calculate(start, midleft - 1, fee);
+        right = calculate(midright + 1, end, fee);
+        if (midleft <= midright) {
+            int left_aggregated = calculate(start, midright, fee);
+            int right_aggregated = calculate(midleft, end, fee);
+            int second_case = left_aggregated + right;
+            int third_case = left + right_aggregated;
+            // Combine #1
+            return std::max({first_case, second_case, third_case, 0});
+        } else {
+            int forth_case = left + right;
+            // Combine #2
+            return std::max({first_case, forth_case, 0});
+        }
+    }
 }
 
 int StockExchange::calculateMaxProfit() {
