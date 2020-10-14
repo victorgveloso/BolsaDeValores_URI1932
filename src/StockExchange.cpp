@@ -8,52 +8,45 @@ int calculate(int *start, int *end, int fee) {
     if (start >= end) {
         return 0;
     }
-    int *midleft = start + 1;
-    int *midright = end - 1;
+    int *nextToMax = start;
+    int *prevToMin = end;
     bool left_ascending = false;
     // Divide
-    while (midleft <= midright) {
-        if (*midleft <= *(midleft - 1)) {
+    while (nextToMax <= end) {
+        if (*nextToMax <= *(nextToMax - 1)) {
             if (left_ascending) {
                 break;
             }
         } else {
             left_ascending = true;
         }
-        ++midleft;
+        ++nextToMax;
     }
     bool right_descending = false;
-    while (midleft <= midright) {
-        if (*midright >= *(midright + 1)) {
+    while (start <= prevToMin) {
+        if (*prevToMin >= *(prevToMin + 1)) {
             if (right_descending) {
                 break;
             }
         } else {
             right_descending = true;
         }
-        --midright;
+        --prevToMin;
     }
     // Conquer
     int delta = (*end) - (*start);
     int left, right, first_case = delta - fee;
-    if (start > midright || end < midleft) { // must be OR for sorted inputs
+    if (end < nextToMax) { // must be OR for sorted inputs
         return std::max(first_case, 0);
     }
+    else if (prevToMin < start) {
+        return std::max((*(nextToMax-1) - (*start)) - fee, 0);
+    }
     else {
-        left = calculate(start, midleft - 1, fee);
-        right = calculate(midright + 1, end, fee);
-        if (midleft <= midright) {
-            int left_aggregated = calculate(start, midright, fee);
-            int right_aggregated = calculate(midleft, end, fee);
-            int second_case = left_aggregated + right;
-            int third_case = left + right_aggregated;
-            // Combine #1
-            return std::max({first_case, second_case, third_case, 0});
-        } else {
-            int forth_case = left + right;
-            // Combine #2
-            return std::max({first_case, forth_case, 0});
-        }
+        left = calculate(start, nextToMax - 1, fee);
+        right = calculate(prevToMin + 1, end, fee);
+        int forth_case = left + right;
+        return std::max({first_case, forth_case, 0});
     }
 }
 
